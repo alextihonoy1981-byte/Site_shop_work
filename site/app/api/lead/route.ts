@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   const save = supabaseUrl && supabaseKey ? async (lead: Lead) => {
     const client = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: (url, init) => fetch(url, { ...init, signal: AbortSignal.timeout(8000) }) } });
     const { error } = await client.from("leads").insert(lead);
-    if (error) console.error("lead_database_error", { code: error.code });
+    if (error) console.error("lead_database_error", { code: error.code, host: new URL(supabaseUrl).hostname, rootPath: new URL(supabaseUrl).pathname === "/" });
     return !error;
   } : undefined;
   const notify = token && chatId ? async (lead: Lead) => {
@@ -44,7 +44,18 @@ export async function POST(request: Request) {
     const text = ["Новая заявка на консалтинг", `Имя: ${lead.name}`, `Контакт: ${lead.contact}`, `Задача: ${lead.message || "Не указана"}`, `Страница: ${lead.page}`, `UTM: ${JSON.stringify(lead.utm)}`, `Время: ${time}`, `Согласие: ${lead.consent_version}`].join("\n");
     const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: chatId, text: text.slice(0, 4000) }), signal: AbortSignal.timeout(8000) });
     const result = await response.json();
-    if (!response.ok || result.ok !== true) console.error("lead_telegram_error", { status: response.status, code: result.error_code });
+    if (!response.ok || result.ok !== true) {
+      const description = typeof result.description === "string" ? result.description.toLowerCase() : "";
+      const reason = description.includes("blocked") ? "bot_blocked" : description.includes("initiate conversation") ? "start_required" : description.includes("deactivated") ? "user_deactivated" : description.includes("kicked") ? "bot_removed" : "other";
+      console.error("lead_telegram_error", { status: response.status, code: result.error_code, reason });
+      if (response.status === 403) {
+        try {
+          const identityResponse = await fetch(`https://api.telegram.org/bot${token}/getMe`, { signal: AbortSignal.timeout(3000) });
+          const identity = await identityResponse.json();
+          if (identityResponse.ok && identity.ok) console.info("lead_telegram_identity", { username: identity.result.username });
+        } catch { /* Delivery failure is already recorded without secrets. */ }
+      }
+    }
     return response.ok && result.ok === true;
   } : undefined;
   const result = await deliverLead(validated.lead, { save, notify });
