@@ -1,0 +1,58 @@
+[
+  {
+    "width": 1440,
+    "height": 900,
+    "status": "passed",
+    "overflow": {
+      "viewport": 1440,
+      "width": 1440
+    },
+    "font": {
+      "status": "loaded",
+      "loaded": true,
+      "family": "manrope, \"manrope Fallback\", Arial, sans-serif"
+    }
+  },
+  {
+    "width": 1920,
+    "height": 1080,
+    "status": "passed",
+    "overflow": {
+      "viewport": 1920,
+      "width": 1920
+    },
+    "font": {
+      "status": "loaded",
+      "loaded": true,
+      "family": "manrope, \"manrope Fallback\", Arial, sans-serif"
+    }
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "status": "passed",
+    "overflow": {
+      "viewport": 390,
+      "width": 390
+    },
+    "font": {
+      "status": "loaded",
+      "loaded": true,
+      "family": "manrope, \"manrope Fallback\", Arial, sans-serif"
+    }
+  },
+  {
+    "width": 320,
+    "height": 640,
+    "status": "passed",
+    "overflow": {
+      "viewport": 320,
+      "width": 320
+    },
+    "font": {
+      "status": "loaded",
+      "loaded": true,
+      "family": "manrope, \"manrope Fallback\", Arial, sans-serif"
+    }
+  }
+]
