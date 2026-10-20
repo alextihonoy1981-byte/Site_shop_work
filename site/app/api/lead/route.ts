@@ -36,15 +36,19 @@ export async function POST(request: Request) {
   const save = supabaseUrl && supabaseKey ? async (lead: Lead) => {
     const client = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: (url, init) => fetch(url, { ...init, signal: AbortSignal.timeout(8000) }) } });
     const { error } = await client.from("leads").insert(lead);
+    if (error) console.error("lead_database_error", { code: error.code });
     return !error;
   } : undefined;
   const notify = token && chatId ? async (lead: Lead) => {
     const time = new Intl.DateTimeFormat("ru-BY", { timeZone: "Europe/Minsk", dateStyle: "short", timeStyle: "short" }).format(new Date());
     const text = ["Новая заявка на консалтинг", `Имя: ${lead.name}`, `Контакт: ${lead.contact}`, `Задача: ${lead.message || "Не указана"}`, `Страница: ${lead.page}`, `UTM: ${JSON.stringify(lead.utm)}`, `Время: ${time}`, `Согласие: ${lead.consent_version}`].join("\n");
     const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: chatId, text: text.slice(0, 4000) }), signal: AbortSignal.timeout(8000) });
-    const result = await response.json(); return response.ok && result.ok === true;
+    const result = await response.json();
+    if (!response.ok || result.ok !== true) console.error("lead_telegram_error", { status: response.status, code: result.error_code });
+    return response.ok && result.ok === true;
   } : undefined;
   const result = await deliverLead(validated.lead, { save, notify });
+  console.info("lead_delivery_result", { saved: result.saved, notified: result.notified });
   if (!result.saved) console.error("lead_database_not_saved");
   if (!result.notified) console.error("lead_notification_not_delivered");
   if (!result.accepted) return reply("Не удалось отправить заявку. Попробуйте ещё раз немного позже.", 503);
