@@ -3,6 +3,13 @@
 Next.js App Router, TypeScript, React, обычный CSS. Сайт: `site/`.
 Подтверждённые контакты: https://t.me/alexxstudio, +375 25 533 10 12.
 
+## Редактирование отзывов и текстов
+
+Пошаговая инструкция для владельца: [content/editing-site.md](content/editing-site.md).
+Отзывы находятся в `site/content/reviews.json`; основные тексты, услуги, FAQ и публичные контакты — в `site/content/site.json`.
+Для публикации отзыва заполните настоящие согласованные данные и установите `published: true`. Пустой шаблон скрыт. Изменения в `main` автоматически публикуются Vercel после успешной сборки.
+Рабочий сайт: https://siteshopwork-dk21.vercel.app. Проект Vercel: `site_shop_work-dk21`, Root Directory: `site`.
+
 ## Запуск
 
 Нужен Node.js 24 (проверено: 24.19.0), npm 11.
