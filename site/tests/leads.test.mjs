@@ -8,7 +8,11 @@ test('Проверка, нормализация и сохранение ист�
   assert.ok(validateLead({ ...valid, contact: 'anna@company.by' }).lead);
 });
 test('Отказ для спама, отсутствующего согласия и неверных контактов', () => {
-  for (const data of [null, [], { ...valid, company: 'spam' }, { ...valid, consent: 'true' }, { ...valid, contact: '123' }, { ...valid, contact: 'not-an-email' }, { ...valid, name: 'x'.repeat(101) }, { ...valid, message: 'x'.repeat(3001) }, { ...valid, page: 'javascript:alert(1)' }]) assert.ok(validateLead(data).error);
+  for (const data of [null, [], { ...valid, website: 'spam' }, { ...valid, consent: 'true' }, { ...valid, contact: '123' }, { ...valid, contact: 'not-an-email' }, { ...valid, name: 'x'.repeat(101) }, { ...valid, message: 'x'.repeat(3001) }, { ...valid, page: 'javascript:alert(1)' }]) assert.ok(validateLead(data).error);
+});
+test('Автозаполнение организации в старой вкладке не отклоняет заявку', () => {
+  assert.ok(validateLead({ ...valid, company: 'Название организации' }).lead);
+  assert.ok(validateLead({ ...valid, company: 'Название организации', website: '' }).lead);
 });
 test('Нет ложного успеха, если оба канала не работают', async () => {
   assert.equal((await deliverLead(valid, { save: async () => false, notify: async () => { throw new Error('offline'); } })).accepted, false);

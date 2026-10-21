@@ -3,7 +3,9 @@ export function validateLead(input: unknown): { lead: Lead } | { error: string }
   if (!input || typeof input !== "object" || Array.isArray(input)) return { error: "Проверьте данные формы." };
   const data = input as Record<string, unknown>;
   const text = (key: string) => typeof data[key] === "string" ? (data[key] as string).trim() : "";
-  if (text("company")) return { error: "Не удалось отправить заявку." };
+  // Старое поле company могло заполняться браузером как название организации.
+  // Не отклоняем такие обращения, в том числе из уже открытых вкладок сайта.
+  if (text("website")) return { error: "Не удалось отправить заявку." };
   const name = text("name"), contact = text("contact"), message = text("message"), page = text("page");
   if (!name || name.length > 100 || /[\x00-\x1f]/.test(name)) return { error: "Укажите имя длиной до 100 символов." };
   const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -18,7 +20,14 @@ export function validateLead(input: unknown): { lead: Lead } | { error: string }
   return { lead: { name, contact, message, page, utm, consent: true, consent_version: "2026-10-20" } };
 }
 export async function deliverLead(lead: Lead, channels: { save?: (lead: Lead) => Promise<boolean>; notify?: (lead: Lead) => Promise<boolean> }) {
-  const run = async (send?: (lead: Lead) => Promise<boolean>) => { try { return send ? await send(lead) : false; } catch { return false; } };
-  const [saved, notified] = await Promise.all([run(channels.save), run(channels.notify)]);
+  const run = async (channel: "database" | "telegram", send?: (lead: Lead) => Promise<boolean>) => {
+    try { return send ? await send(lead) : false; }
+    catch (error) {
+      const reason = error instanceof Error && ["TimeoutError", "AbortError"].includes(error.name) ? "timeout" : "channel_exception";
+      console.error("lead_channel_error", { channel, reason });
+      return false;
+    }
+  };
+  const [saved, notified] = await Promise.all([run("database", channels.save), run("telegram", channels.notify)]);
   return { saved, notified, accepted: saved || notified };
 }

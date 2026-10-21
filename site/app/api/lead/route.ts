@@ -11,26 +11,29 @@ function limited(key: string) {
   windows.set(key, entry); entry.count++;
   return entry.count > 5;
 }
-const reply = (error: string, status: number) => Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
+const reply = (error: string, status: number, reason: string) => {
+  console.warn("lead_request_rejected", { status, reason });
+  return Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
+};
 export async function POST(request: Request) {
   const origin = request.headers.get("origin");
   const requestHost = request.headers.get("host") || new URL(request.url).host;
   if (origin) {
     try {
       const parsed = new URL(origin);
-      if (!["http:", "https:"].includes(parsed.protocol) || (parsed.host !== requestHost && origin !== siteConfig.url)) return reply("Отправьте заявку с нашего сайта.", 403);
-    } catch { return reply("Отправьте заявку с нашего сайта.", 403); }
+      if (!["http:", "https:"].includes(parsed.protocol) || (parsed.host !== requestHost && origin !== siteConfig.url)) return reply("Отправьте заявку с нашего сайта.", 403, "origin");
+    } catch { return reply("Отправьте заявку с нашего сайта.", 403, "origin"); }
   }
-  if (!request.headers.get("content-type")?.startsWith("application/json")) return reply("Неверный формат запроса.", 415);
-  if (Number(request.headers.get("content-length") || 0) > 12000) return reply("Слишком большой запрос.", 413);
+  if (!request.headers.get("content-type")?.startsWith("application/json")) return reply("Неверный формат запроса.", 415, "content_type");
+  if (Number(request.headers.get("content-length") || 0) > 12000) return reply("Слишком большой запрос.", 413, "body_size");
   const ip = request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "local";
-  if (limited(ip)) return reply("Слишком много попыток. Попробуйте через 10 минут.", 429);
+  if (limited(ip)) return reply("Слишком много попыток. Попробуйте через 10 минут.", 429, "rate_limit");
   let input: unknown;
-  try { const body = await request.text(); if (new TextEncoder().encode(body).length > 12000) return reply("Слишком большой запрос.", 413); input = JSON.parse(body); } catch { return reply("Проверьте данные формы.", 400); }
+  try { const body = await request.text(); if (new TextEncoder().encode(body).length > 12000) return reply("Слишком большой запрос.", 413, "body_size"); input = JSON.parse(body); } catch { return reply("Проверьте данные формы.", 400, "json"); }
   const validated = validateLead(input);
-  if ("error" in validated) return reply(validated.error, 400);
+  if ("error" in validated) return reply(validated.error, 400, validated.error === "Не удалось отправить заявку." ? "honeypot" : "validation");
   // Приём включается владельцем только после утверждения условий обработки данных.
-  if (process.env.LEAD_INTAKE_ENABLED !== "true" || !process.env.OWNER_NAME || !process.env.OWNER_CONTACT) return reply("Приём заявок через форму пока недоступен. Пожалуйста, попробуйте позже.", 503);
+  if (process.env.LEAD_INTAKE_ENABLED !== "true" || !process.env.OWNER_NAME || !process.env.OWNER_CONTACT) return reply("Приём заявок через форму пока недоступен. Пожалуйста, попробуйте позже.", 503, "intake_disabled");
   const supabaseUrl = process.env.SUPABASE_URL, supabaseKey = process.env.SUPABASE_SECRET_KEY;
   const token = process.env.TELEGRAM_BOT_TOKEN, chatId = process.env.TELEGRAM_CHAT_ID;
   const save = supabaseUrl && supabaseKey ? async (lead: Lead) => {
@@ -62,6 +65,6 @@ export async function POST(request: Request) {
   console.info("lead_delivery_result", { saved: result.saved, notified: result.notified });
   if (!result.saved) console.error("lead_database_not_saved");
   if (!result.notified) console.error("lead_notification_not_delivered");
-  if (!result.accepted) return reply("Не удалось отправить заявку. Попробуйте ещё раз немного позже.", 503);
+  if (!result.accepted) return reply("Не удалось отправить заявку. Попробуйте ещё раз немного позже.", 503, "delivery_failed");
   return Response.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
 }

@@ -20,7 +20,7 @@ export function LeadForm({ available = false }: { available?: boolean }) {
     const params = new URLSearchParams(window.location.search);
     const utm = Object.fromEntries(["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"].flatMap(key => params.has(key) ? [[key, params.get(key)!.slice(0, 200)]] : []));
     try {
-      const response = await fetch("/api/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: data.get("name"), contact: data.get("contact"), message, consent: data.get("consent") === "on", company: data.get("company"), page: window.location.origin + window.location.pathname, utm }), signal: AbortSignal.timeout(25000) });
+      const response = await fetch("/api/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: data.get("name"), contact: data.get("contact"), message, consent: data.get("consent") === "on", website: data.get("website"), page: window.location.origin + window.location.pathname, utm }), signal: AbortSignal.timeout(25000) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Не удалось отправить заявку. Попробуйте ещё раз немного позже.");
       setStatus("success"); setFeedback("Заявка получена. Спасибо, что рассказали о своей задаче."); form.reset(); setMessage("");
@@ -31,7 +31,7 @@ export function LeadForm({ available = false }: { available?: boolean }) {
     <div className="form-field"><label htmlFor="name">Как к вам обращаться</label><input id="name" name="name" autoComplete="name" maxLength={100} placeholder="Ваше имя" required /></div>
     <div className="form-field"><label htmlFor="contact-value">Телефон или email</label><input id="contact-value" name="contact" autoComplete="email" maxLength={160} minLength={5} placeholder="+375 или name@company.by" required aria-describedby="contact-help" /><span id="contact-help" className="field-help">Контакт, по которому с вами удобно связаться</span></div>
     <div className="form-field"><label htmlFor="message">О чём хотите поговорить <span>необязательно</span></label><textarea id="message" name="message" maxLength={3000} rows={3} placeholder="Пару слов о вашем бизнесе и задаче" value={message} onChange={e => setMessage(e.target.value)} /></div>
-    <div className="honeypot" aria-hidden="true"><label htmlFor="company">Оставьте это поле пустым</label><input id="company" name="company" tabIndex={-1} autoComplete="off" /></div>
+    <div hidden aria-hidden="true"><label htmlFor="website">Оставьте это поле пустым</label><input id="website" name="website" tabIndex={-1} autoComplete="off" /></div>
     <label className="consent"><input type="checkbox" name="consent" required /><span>Согласен на обработку данных для ответа на обращение. <Link href="/privacy" target="_blank">Условия обработки данных<span className="sr-only"> (откроются в новой вкладке)</span></Link></span></label>
     <button className="button button-primary form-button" type="submit" disabled={status === "pending"}>{status === "pending" ? "Отправляем…" : "Отправить заявку"}<span aria-hidden="true" className="arrow-icon" /></button>
     <div className={`form-feedback ${status}`} role="status" aria-live="polite">{feedback}{status === "error" && <> <a href="https://t.me/alexxstudio" target="_blank" rel="noopener noreferrer">Написать в Telegram</a></>}</div>
