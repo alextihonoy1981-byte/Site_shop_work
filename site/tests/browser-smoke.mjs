@@ -15,7 +15,7 @@ try {
     assert.equal(response.status(),200);
     await page.evaluate(() => document.fonts.ready);
     assert.equal(await page.locator('h1').count(),1);
-    assert.ok(await page.locator('h1').textContent().then(t=>t.includes('Маркетинговый консалтинг')));
+    assert.ok(await page.locator('h1').textContent().then(t=>t.includes('Экспертный взгляд.')));
     const overflow = await page.evaluate(() => ({ viewport: innerWidth, width: document.documentElement.scrollWidth }));
     assert.ok(overflow.width <= width + 1, JSON.stringify(overflow));
     assert.equal(await page.locator('html').getAttribute('lang'),'ru');

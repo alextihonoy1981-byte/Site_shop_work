@@ -19,7 +19,7 @@ export function Reviews({ reviews }: { reviews: Review[] }) {
         <div><h3>Здесь появятся отзывы клиентов</h3><p>Уже работали вместе? Расскажите о своих впечатлениях. С вашего разрешения опубликуем отзыв в этом разделе.</p></div>
         <a className="button reviews-button" href={siteConfig.telegram} target="_blank" rel="noopener noreferrer">Поделиться отзывом <span aria-hidden="true" className="arrow-icon" /><span className="sr-only"> в Telegram (откроется в новой вкладке)</span></a>
       </div>}
-      {reviews.length > 0 && <div className="reviews-bottom"><p>Хотите поделиться впечатлениями о нашей работе?</p><a className="text-link" href={siteConfig.telegram} target="_blank" rel="noopener noreferrer">Написать отзыв в Telegram <span aria-hidden="true" className="arrow-icon" /></a></div>}
+      {reviews.length > 0 && <div className="reviews-bottom"><p>Хотите поделиться впечатлениями о совместной работе?</p><a className="text-link" href={siteConfig.telegram} target="_blank" rel="noopener noreferrer">Написать отзыв в Telegram <span aria-hidden="true" className="arrow-icon" /></a></div>}
     </div>
   </section>;
 }
